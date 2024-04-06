@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Dash.js Rocks</title>
+        <style>
+            #video-container {
+                position: relative;
+                width: 640px;
+                height: 360px;
+            }
+            video {
+                width: 100%;
+                height: 100%;
+            }
+            #controls {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                z-index: 2;
+                display: none; /* Hide controls by default */
+            }
+            #video-container:hover #controls {
+                display: block; /* Show controls when hovering over the container */
+            }
+            .button {
+                background-color: rgba(255, 255, 255, 0.7);
+                border: none;
+                cursor: pointer;
+                margin: 0 5px;
+            }
+            .button img {
+                width: 30px;
+                height: auto;
+            }
+            #progress-bar {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 5px;
+                background-color: blue;
+            }
+            #progress {
+                width: 0;
+                height: 100%;
+                background-color: orange;
+            }
+            #navbar {
+                position: relative;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100px;
+                background-color: rgba(0, 0, 0, 0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+            }
+
+
+        </style>
+    </head>
+    <body>
+        <div id="navbar">
+            <nav>
+                <img src="images/logo.png" width="200" height="100">
+            </nav>
+
+        </div>
+        <div id="video-container">
+            <video id="videoPlayer" controls></video>
+            <div id="controls">
+                <button class="button" id="forward">
+                    <img src="images/forward-10.svg" alt="Forward 10s">
+                </button>
+                <button class="button" id="backward">
+                    <img src="images/rewind-10.svg" alt="Backward 10s">
+                </button>
+                <button class="button" id="live">
+                    <img src="images/jump-live.svg" alt="Go Live">
+                </button>
+                <button class="button" id="photo">
+                    <img src="images/photo.svg" alt="Take Photo">
+                </button>
+
+                <!-- Additional buttons can be added here -->
+            </div>
+            <div id="progress-bar">
+                <div id="progress"></div>
+            </div>
+
+        </div>
+        <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+        <script>
+            (function(){
+                var url = "manifest.mpd";
+                var player = dashjs.MediaPlayer().create();
+                var settings = {
+                    streaming: {
+                        delay: {
+                            liveDelay: 15 
+                        },
+                        liveCatchup: {
+                            enabled: true
+                        }
+                    }
+                };
+                player.initialize(document.querySelector("#videoPlayer"), url, false);
+                player.updateSettings(settings);
+                
+                // Button functionalities
+                document.getElementById('forward').onclick = function() {
+                    player.seek(player.time() + 10);
+                };
+                document.getElementById('backward').onclick = function() {
+                    player.seek(player.time() - 10);
+                };
+                document.getElementById('live').onclick = function() {
+                    player.seek(player.duration());
+                };
+                document.getElementById('photo').onclick = function() {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = document.querySelector("#videoPlayer").videoWidth;
+                    canvas.height = document.querySelector("#videoPlayer").videoHeight;
+                    canvas.getContext('2d').drawImage(document.querySelector("#videoPlayer"), 0, 0, canvas.width, canvas.height);
+                    var dataURL = canvas.toDataURL('image/png');
+                    var a = document.createElement('a');
+                    a.href = dataURL;
+                    a.download = 'photo.png';
+                    a.click();
+                };
+
+                // Progress bar
+                var progress = document.getElementById('progress');
+                player.on(dashjs.MediaPlayer.events.PLAYBACK_TIME_UPDATED, function() {
+                    progress.style.width = (player.time() / player.duration()) * 100 + '%';
+                });
+                // add time seek for progress bar
+                document.getElementById('progress-bar').onclick = function(e) {
+                    var x = e.pageX - this.offsetLeft;
+                    var clickedValue = x * player.duration() / this.offsetWidth;
+                    player.seek(clickedValue);
+                };
+
+
+            })();
+        </script>
+    </body>
+</html>
